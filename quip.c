@@ -10,7 +10,7 @@
  *			 'hint' decoded. It's then the job of the solver to decode
  *			 the rest of the cyphertext.
  *
- *	$Id: quip.c,v 1.1 2001/02/18 13:12:55 drbob Exp $
+ *	$Id: quip.c,v 1.2 2001/06/06 13:42:42 drbob Exp $
  *
  *	Copyright 2000 Robert E. Beaty, Ph.D. All Rights Reserved
  */
@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
+#include <sys/types.h>
 #include <time.h>
 
 /*
@@ -167,12 +168,12 @@ characterFrequencyData 	*GenerateCharacterCountsWithLegend(legend *map);
 void 		PrintCrossMatchData(characterFrequencyData *data);
 
 // ...these are the frequency attack functions
-BOOL 		DoFrequencyAttack(legend *map);
+BOOL 		DoFrequencyAttack(legend *map, int maxSec);
 void 		BuildFreqAttackLegend(int cyphercharIndex, legend *map);
 void 		TestFreqAttackLegend(legend *map);
 
 // ...these are the word block attack functions
-BOOL 		DoWordBlockAttack(int cypherwordIndex, legend *map);
+BOOL 		DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec);
 BOOL 		IncorporateCypherToPlainMapInLegend(char *cyphertext, char *plaintext, legend *map);
 
 // ...these are the general UI functions
@@ -594,7 +595,6 @@ cypherword *DestroyCypherword(cypherword *word) {
 }
 
 
-/*
 /*
  *	This routine takes a cypherword and a character string and
  *	checks to see if the string has the right structural pattern
@@ -1646,7 +1646,7 @@ int		possibleCharCount[26];
  *	The purpose of the legend here is to reduce the search space
  *	even further based on the "known" keys provided by the user.
  */
-BOOL DoFrequencyAttack(legend *map) {
+BOOL DoFrequencyAttack(legend *map, int maxSec) {
 	BOOL					error = NO;
 	characterFrequencyData	*histo = NULL;
 	legend					*myMap = NULL;
@@ -1967,15 +1967,17 @@ void TestFreqAttackLegend(legend *map) {
  *	There will be quite a few 'passes' in this attack plan, but
  *	hopefully not nearly as many as a character-based scheme.
  */
-BOOL DoWordBlockAttack(int cypherwordIndex, legend *map) {
-	BOOL			error = NO;
+BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
+	BOOL		error = NO;
+	int			startTime = time(NULL);
+	BOOL		timeLeft = YES;
 
 	// now do the meat of the word attack loop
 	if (!error) {
 		int			i;
 
 		// search over all possibles for this cypherword
-		for (i = 0; (i < words[cypherwordIndex]->numberOfPossibles) && !error; i++) {
+		for (i = 0; (i < words[cypherwordIndex]->numberOfPossibles) && timeLeft && !error; i++) {
 			// does this map fit - allowing for missing gaps?
 			if (CanCypherAndLegendMakePlain(words[cypherwordIndex]->cyphertext, map, words[cypherwordIndex]->possiblePlaintext[i], NO)) {
 				// good! Now let's see if we are done with  all words
@@ -2049,11 +2051,35 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map) {
 					/*
 					 *	OK, we had a match but we have more cypherwords
 					 *	to check. So, copy the legend, add in the assumed
-					 *	values from the plaintext, and more to the next 
+					 *	values from the plaintext, and move to the next 
 					 *	word.
+					 *
+					 *	BUT FIRST, we need to check the run-time. If we're
+					 *	past the alloted time given to us then we need to
+					 *	bail out - regardless of the state of the 
+					 *	decryption.
 					 */
+					int			remainingSec = -1;
 					legend		*nextGenMap = NULL;
 
+					/*
+					 *	First, check the runtime... Get the remaining time
+					 *	for later, if it's applicable.
+					 */
+					if (maxSec > 0) {
+						if ((time(NULL) - startTime) > maxSec) {
+							// no time left - gotta bail out now
+							timeLeft = NO;
+							break;
+						} else {
+							// OK... we have some time left, calculate how much
+							remainingSec = maxSec - (time(NULL) - startTime);
+						}
+					}
+
+					/*
+					 *	Now we can set things up to check the next word
+					 */
 					nextGenMap = DuplicateLegend(map);
 					if (nextGenMap == NULL) {
 						error = YES;
@@ -2067,13 +2093,22 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map) {
 						// now we need to augment it from the plaintext
 						if (IncorporateCypherToPlainMapInLegend(words[cypherwordIndex]->cyphertext, words[cypherwordIndex]->possiblePlaintext[i], nextGenMap)) {
 							// ...and use this new legend for the next word
-							DoWordBlockAttack((cypherwordIndex + 1), nextGenMap);
+							DoWordBlockAttack((cypherwordIndex + 1), nextGenMap, remainingSec);
 						}
 
 						// ...and don't forget to clean up our messes
 						free(nextGenMap);
 					}
 				}
+			}
+
+			/*
+			 *	At the end of each loop we really need to see if the amount
+			 *	of time we've been given by the caller has elapsed. If it
+			 *	has, then we need to quit regardless of what we've found.
+			 */
+			if ( (maxSec > 0) && ((time(NULL) - startTime) >= maxSec) ) {
+				timeLeft = NO;
 			}
 		}
 	}
@@ -2217,6 +2252,7 @@ void showUsage() {
 	puts("where:");
 	puts("      cyphertext - is the (quoted) cyphertext to use");
 	puts("      -ka=b - indicates known substitution 'b' for 'a'");
+	puts("      -Tn - limit the solution search time to (n) sec.");
 	puts("      -H - on output, format it as HTML");
 	puts("      -ffilename - use the file 'filename' for words");
 	puts("      -F - try the 'Frequency Attack' for a solution");
@@ -2237,6 +2273,7 @@ int main(int argc, char *argv[]) {
 	BOOL	decrypting = YES;
 	BOOL	showLegend = NO;
 	BOOL	htmlOutput = NO;
+	int		timeLimit = -1;
 	BOOL	creatingCommandLine = NO;
 	BOOL	tryingFrequencyAttack = NO;
 	BOOL	tryingWordBlockAttack = YES;
@@ -2321,6 +2358,11 @@ int main(int argc, char *argv[]) {
 						break;
 					case 'H' :
 						htmlOutput = YES;
+						break;
+					case 'T' :
+						if (strlen(argv[i]) > 2) {
+							timeLimit = atoi( &(argv[i][2]) );
+						}
 						break;
 					case 'l' :
 						decrypting = NO;
@@ -2410,7 +2452,7 @@ int main(int argc, char *argv[]) {
 	 *	reduced search space, it should be reasonably fast.
 	 */
 	if (!error && keepGoing && tryingFrequencyAttack) {
-		if (!DoFrequencyAttack(userLegend)) {
+		if (!DoFrequencyAttack(userLegend, timeLimit)) {
 			keepGoing = NO;
 		}
 		// ...well... we certainly tried
@@ -2426,7 +2468,7 @@ int main(int argc, char *argv[]) {
 	 *	at once and therefore make it a little more speedy.
 	 */
 	if (!error && keepGoing && tryingWordBlockAttack) {
-		if (!DoWordBlockAttack(0, userLegend)) {
+		if (!DoWordBlockAttack(0, userLegend, timeLimit)) {
 			keepGoing = NO;
 		}
 		// ...well... we certainly tried
