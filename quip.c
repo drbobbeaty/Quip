@@ -10,7 +10,7 @@
  *			 'hint' decoded. It's then the job of the solver to decode
  *			 the rest of the cyphertext.
  *
- *	$Id: quip.c,v 1.5 2002/12/13 00:47:32 drbob Exp $
+ *	$Id: quip.c,v 1.6 2002/12/13 00:57:28 drbob Exp $
  *
  *	Copyright 2000 Robert E. Beaty, Ph.D. All Rights Reserved
  */
@@ -206,6 +206,7 @@ char			*initialCyphertext = NULL;
 char			**plainText;
 int				plainTextMaxCnt;
 int				plainTextCnt;
+BOOL			htmlOutput = NO;
 
 
 /************************************************************************
@@ -1350,9 +1351,15 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 	if (!error) {
 		if (text == NULL) {
 			error = YES;
-			printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
-				   "    The passed-in cyphertext was NULL and so no parsing\n"
-				   "    could be done. This is probably a programming error.\n");
+			if (htmlOutput) {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***<BR>\n"
+					   "    The passed-in cyphertext was NULL and so no parsing<BR>\n"
+					   "    could be done. This is probably a programming error.<BR>\n");
+			} else {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+					   "    The passed-in cyphertext was NULL and so no parsing\n"
+					   "    could be done. This is probably a programming error.\n");
+			}
 		} else {
 			int		len = strlen(text);
 			
@@ -1360,11 +1367,19 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 			for (i = 0; i < len; i++) {
 				if (!(isspace(text[i]) || isalpha(text[i]) || ispunct(text[i]))) {
 					error = YES;
-					printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
-						   "    The passed-in cyphertext contains characters other\n"
-						   "    than A-Z, a-z, spaces and simple punctuation. This\n"
-						   "    is the only form of the cyphertext that this parser\n"
-						   "    understands.\n");
+					if (htmlOutput) {
+						printf("*** Error in CreateCypherwordsFromCyphertext() ***<BR>\n"
+							   "    The passed-in cyphertext contains characters other<BR>\n"
+							   "    than A-Z, a-z, spaces and simple punctuation. This<BR>\n"
+							   "    is the only form of the cyphertext that this parser<BR>\n"
+							   "    understands.<BR>\n");
+					} else {
+						printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+							   "    The passed-in cyphertext contains characters other\n"
+							   "    than A-Z, a-z, spaces and simple punctuation. This\n"
+							   "    is the only form of the cyphertext that this parser\n"
+							   "    understands.\n");
+					}
 					break;
 				}
 			}
@@ -1393,10 +1408,17 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 		word = (char *) malloc((strlen(text)+1) * sizeof(char));
 		if (word == NULL) {
 			error = YES;
-			printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
-				   "    The temporary word buffer could not be created.\n"
-				   "    This is serious because this is used in the parsing\n"
-				   "    of the cyphertext into cypherwords.\n");
+			if (htmlOutput) {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***<BR>\n"
+					   "    The temporary word buffer could not be created.<BR>\n"
+					   "    This is serious because this is used in the parsing<BR>\n"
+					   "    of the cyphertext into cypherwords.<BR>\n");
+			} else {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+					   "    The temporary word buffer could not be created.\n"
+					   "    This is serious because this is used in the parsing\n"
+					   "    of the cyphertext into cypherwords.\n");
+			}
 		}
 	}
 
@@ -1428,9 +1450,15 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 		// now see if we had any words at all in the text
 		if (wordCount == 0) {
 			error = YES;
-			printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
-				   "    There were no words found in the cyphertext. This\n"
-				   "    represents a trivial condition and won't be done.\n");
+			if (htmlOutput) {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***<BR>\n"
+					   "    There were no words found in the cyphertext. This<BR>\n"
+					   "    represents a trivial condition and won't be done.<BR>\n");
+			} else {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+					   "    There were no words found in the cyphertext. This\n"
+					   "    represents a trivial condition and won't be done.\n");
+			}
 		}
 	}
 
@@ -1439,10 +1467,17 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 		words = (cypherword **) malloc(wordCount * sizeof(cypherword *));
 		if (words == NULL) {
 			error = YES;
-			printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
-				   "    The array of cypherwords could not be allocated.\n"
-				   "    This is a serious problem because this is used to\n"
-				   "    hold the cypherwords from the cyphertext.\n");
+			if (htmlOutput) {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***<BR>\n"
+					   "    The array of cypherwords could not be allocated.<BR>\n"
+					   "    This is a serious problem because this is used to<BR>\n"
+					   "    hold the cypherwords from the cyphertext.<BR>\n");
+			} else {
+				printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+					   "    The array of cypherwords could not be allocated.\n"
+					   "    This is a serious problem because this is used to\n"
+					   "    hold the cypherwords from the cyphertext.\n");
+			}
 		}
 	}
 
@@ -1471,9 +1506,15 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 				words[w] = CreateCypherword(word);
 				if (words[w] == NULL) {
 					error = YES;
-					printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
-						   "    The cypherword '%s' could not be created properly.\n"
-						   "    This is a serious problem and we can't go on.\n", word);
+					if (htmlOutput) {
+						printf("*** Error in CreateCypherwordsFromCyphertext() ***<BR>\n"
+							   "    The cypherword '%s' could not be created properly.<BR>\n"
+							   "    This is a serious problem and we can't go on.<BR>\n", word);
+					} else {
+						printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+							   "    The cypherword '%s' could not be created properly.\n"
+							   "    This is a serious problem and we can't go on.\n", word);
+					}
 				} else {
 					w++;
 				}
@@ -2375,7 +2416,6 @@ int main(int argc, char *argv[]) {
 	BOOL	solutionAttempted = NO;
 	BOOL	decrypting = YES;
 	BOOL	showLegend = NO;
-	BOOL	htmlOutput = NO;
 	// default to a reasonable time limit
 	int		timeLimit = 20;
 	BOOL	creatingCommandLine = NO;
@@ -2542,10 +2582,17 @@ int main(int argc, char *argv[]) {
 	if (!error && keepGoing) {
 		if (!CreateCypherwordsFromCyphertext(initialCyphertext)) {
 			error = YES;
-			printf("*** Error ***\n"
-				   "    The passsed in cyphertext could not be parsed into\n"
-				   "    cyberwords properly. Please check for messages\n"
-				   "    indicating what might have gone wrong.\n");
+			if (htmlOutput) {
+				printf("*** Error ***<BR>\n"
+					   "    The passsed in cyphertext could not be parsed into<BR>\n"
+					   "    cyberwords properly. Please check for messages<BR>\n"
+					   "    indicating what might have gone wrong.<BR>\n");
+			} else {
+				printf("*** Error ***\n"
+					   "    The passsed in cyphertext could not be parsed into\n"
+					   "    cyberwords properly. Please check for messages\n"
+					   "    indicating what might have gone wrong.\n");
+			}
 		}
 	}
 
