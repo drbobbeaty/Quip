@@ -10,7 +10,7 @@
  *			 'hint' decoded. It's then the job of the solver to decode
  *			 the rest of the cyphertext.
  *
- *	$Id: quip.c,v 1.3 2001/06/12 19:58:58 drbob Exp $
+ *	$Id: quip.c,v 1.4 2001/06/13 14:31:02 drbob Exp $
  *
  *	Copyright 2000 Robert E. Beaty, Ph.D. All Rights Reserved
  */
@@ -65,6 +65,9 @@ typedef int BOOL;
 
 // this is the default logging file
 #define DEFAULT_LOG_FILE		"/tmp/quip.log"
+
+// assume that we don't need logging
+#define LOG						NO
 
 /*
  *	When creating a new cypherword, the array of possibles starts
@@ -2357,7 +2360,8 @@ int main(int argc, char *argv[]) {
 	BOOL	decrypting = YES;
 	BOOL	showLegend = NO;
 	BOOL	htmlOutput = NO;
-	int		timeLimit = -1;
+	// default to a reasonable time limit
+	int		timeLimit = 20;
 	BOOL	creatingCommandLine = NO;
 	BOOL	tryingFrequencyAttack = NO;
 	BOOL	tryingWordBlockAttack = YES;
@@ -2448,6 +2452,11 @@ int main(int argc, char *argv[]) {
 					case 'T' :
 						if (strlen(argv[i]) > 2) {
 							timeLimit = atoi( &(argv[i][2]) );
+							if (timeLimit < 0) {
+								timeLimit = -1;
+							} else if (timeLimit > 300) {
+								timeLimit = 300;
+							}
 						}
 						break;
 					case 'l' :
@@ -2482,7 +2491,7 @@ int main(int argc, char *argv[]) {
 	/*
 	 *	Log what we've got so far - if needed
 	 */
-	if (!error && keepGoing) {
+	if (!error && keepGoing && LOG) {
 		snprintf(logMsg, 2048, "starting: quip='%s' time=%d", initialCyphertext, timeLimit);
 		logIt(logMsg);
 	}
@@ -2591,7 +2600,7 @@ int main(int argc, char *argv[]) {
 				if (htmlOutput) {
 					printf("%s<BR>\n", plainText[i]);
 				} else {
-					printf("Solution: '%s'\n", plainText[i]);
+					printf("Solution: %s\n", plainText[i]);
 				}
 			}
 		}
@@ -2600,7 +2609,7 @@ int main(int argc, char *argv[]) {
 	/*
 	 *	Log the end of what we've done
 	 */
-	if (!error && keepGoing) {
+	if (!error && keepGoing && LOG) {
 		snprintf(logMsg, 2048, "terminating: quip='%s'", initialCyphertext);
 		logIt(logMsg);
 	}
