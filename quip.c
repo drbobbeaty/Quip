@@ -10,7 +10,7 @@
  *			 'hint' decoded. It's then the job of the solver to decode
  *			 the rest of the cyphertext.
  *
- *	$Id: quip.c,v 1.2 2001/06/06 13:42:42 drbob Exp $
+ *	$Id: quip.c,v 1.3 2001/06/12 19:58:58 drbob Exp $
  *
  *	Copyright 2000 Robert E. Beaty, Ph.D. All Rights Reserved
  */
@@ -62,6 +62,9 @@ typedef int BOOL;
 
 // this is the default filename of the words file
 #define DEFAULT_WORDS_FILE		"words"
+
+// this is the default logging file
+#define DEFAULT_LOG_FILE		"/tmp/quip.log"
 
 /*
  *	When creating a new cypherword, the array of possibles starts
@@ -178,6 +181,7 @@ BOOL 		IncorporateCypherToPlainMapInLegend(char *cyphertext, char *plaintext, le
 
 // ...these are the general UI functions
 void 		showUsage();
+void		logIt(char *msg);
 
 
 /************************************************************************
@@ -2261,6 +2265,86 @@ void showUsage() {
 }
 
 
+/*
+ *	This routine logs the message to the appropriate file in the
+ *	system with the date and time conveniently displayed at the
+ *	beginning of each line for sorting/identification issues.
+ */
+void logIt(char *msg) {
+	BOOL	error = NO;
+	char	*dateFmt = NULL;
+	char	userFmt[L_cuserid];
+	FILE	*fp = NULL;
+
+	/*
+	 *	First, let's get the date and time into a nice string...
+	 */
+	if (!error) {
+		time_t	now = time(NULL);
+		dateFmt = ctime( &now );
+		if (dateFmt == NULL) {
+			error = YES;
+			printf("*** Error in logIt() ***\n"
+				   "    The date/time stamp could not be generated for the\n"
+				   "    log. This is a serious problem! The message was:\n"
+				   "    %s\n", msg);
+		} else {
+			// drop the '\n' that's in the date/time string
+			dateFmt[24] = '\0';
+		}
+	}
+
+	/*
+	 *	Next, let's get the name of the user we're running under...
+	 */
+	if (!error) {
+		if (cuserid(userFmt) == NULL) {
+			error = YES;
+			printf("*** Error in logIt() ***\n"
+				   "    The process username could not be generated for the\n"
+				   "    log. This is a serious problem! The message was:\n"
+				   "    %s\n", msg);
+		}
+	}
+
+	/*
+	 *	Now let's set up the log file for the addition of this message
+	 */
+	if (!error) {
+		fp = fopen(DEFAULT_LOG_FILE, "a");
+		if (fp == NULL) {
+			error = YES;
+			printf("*** Error in logIt() ***\n"
+				   "    The log file could not be opened for adding this\n"
+				   "    message. This is a serious problem! The message was:\n"
+				   "    %s\n", msg);
+		} else {
+			if (fseek(fp, 0, SEEK_END) == -1) {
+				error = YES;
+				printf("*** Error in logIt() ***\n"
+					   "    The log file could not be positioned for adding this\n"
+					   "    message. This is a serious problem! The message was:\n"
+					   "    %s\n", msg);
+			}
+		}
+	}
+
+	/*
+	 *	Now we can write this message out to the log file
+	 */
+	if (!error) {
+		fprintf(fp, "%s (%s) %s\n", dateFmt, userFmt, msg);
+	}
+
+	/*
+	 *	Now clean everything up so that it's all nice and tidy.
+	 */
+	if (fp != NULL) {
+		fclose(fp);
+	}
+}
+
+
 /*************************************************************************
  *
  *	MAIN ENTRY POINT
@@ -2278,6 +2362,8 @@ int main(int argc, char *argv[]) {
 	BOOL	tryingFrequencyAttack = NO;
 	BOOL	tryingWordBlockAttack = YES;
 	char	*wordsFilename = NULL;
+	// this is for logging purposes
+	char	logMsg[2408];
 
 	/*
 	 *	First, set up the defaults for this program
@@ -2394,6 +2480,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	/*
+	 *	Log what we've got so far - if needed
+	 */
+	if (!error && keepGoing) {
+		snprintf(logMsg, 2048, "starting: quip='%s' time=%d", initialCyphertext, timeLimit);
+		logIt(logMsg);
+	}
+
+	/*
 	 *	Check to see if we have any cyphertext to process.
 	 *	If not, then we need to show the usage and quit.
 	 */
@@ -2501,6 +2595,14 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+	}
+
+	/*
+	 *	Log the end of what we've done
+	 */
+	if (!error && keepGoing) {
+		snprintf(logMsg, 2048, "terminating: quip='%s'", initialCyphertext);
+		logIt(logMsg);
 	}
 
 	/*
