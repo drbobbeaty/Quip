@@ -3,7 +3,7 @@
 #
 
 CC = gcc
-CCOPTS = -O2
+CCOPTS = -O2 -g
 RM = rm
 
 quip: quip.c
