@@ -6,7 +6,7 @@ CC = gcc
 CCOPTS = -O2
 RM = rm
 
-quip:
+quip: quip.c
 	$(CC) $(CCOPTS) -o quip quip.c
 
 clean:
