@@ -10,7 +10,7 @@
  *			 'hint' decoded. It's then the job of the solver to decode
  *			 the rest of the cyphertext.
  *
- *	$Id: quip.c,v 1.4 2001/06/13 14:31:02 drbob Exp $
+ *	$Id: quip.c,v 1.5 2002/12/13 00:47:32 drbob Exp $
  *
  *	Copyright 2000 Robert E. Beaty, Ph.D. All Rights Reserved
  */
@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 /*
  *	System-level & Data type definitions
@@ -1352,6 +1353,21 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 			printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
 				   "    The passed-in cyphertext was NULL and so no parsing\n"
 				   "    could be done. This is probably a programming error.\n");
+		} else {
+			int		len = strlen(text);
+			
+			// make sure it contains nothing but legal characters
+			for (i = 0; i < len; i++) {
+				if (!(isspace(text[i]) || isalpha(text[i]) || ispunct(text[i]))) {
+					error = YES;
+					printf("*** Error in CreateCypherwordsFromCyphertext() ***\n"
+						   "    The passed-in cyphertext contains characters other\n"
+						   "    than A-Z, a-z, spaces and simple punctuation. This\n"
+						   "    is the only form of the cyphertext that this parser\n"
+						   "    understands.\n");
+					break;
+				}
+			}
 		}
 	}
 
@@ -1977,14 +1993,24 @@ void TestFreqAttackLegend(legend *map) {
 BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 	BOOL		error = NO;
 	int			startTime = time(NULL);
-	BOOL		timeLeft = YES;
+
+	// first, see if we really have any time to do this
+	if (!error) {
+		if (maxSec <= 0) {
+			error = YES;
+			printf("*** Error in DoWordBlockAttack() ***\n"
+					"    The passed-in maximum time allotment is 0 which\n"
+					"    means that there's no time to do anything. This is\n"
+					"    too bad, but unaviodable in some cases.\n");
+		}
+	}
 
 	// now do the meat of the word attack loop
 	if (!error) {
 		int			i;
 
 		// search over all possibles for this cypherword
-		for (i = 0; (i < words[cypherwordIndex]->numberOfPossibles) && timeLeft && !error; i++) {
+		for (i = 0; (i < words[cypherwordIndex]->numberOfPossibles) && !error; i++) {
 			// does this map fit - allowing for missing gaps?
 			if (CanCypherAndLegendMakePlain(words[cypherwordIndex]->cyphertext, map, words[cypherwordIndex]->possiblePlaintext[i], NO)) {
 				// good! Now let's see if we are done with  all words
@@ -2073,15 +2099,15 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 					 *	First, check the runtime... Get the remaining time
 					 *	for later, if it's applicable.
 					 */
-					if (maxSec > 0) {
-						if ((time(NULL) - startTime) > maxSec) {
-							// no time left - gotta bail out now
-							timeLeft = NO;
-							break;
-						} else {
-							// OK... we have some time left, calculate how much
-							remainingSec = maxSec - (time(NULL) - startTime);
-						}
+					remainingSec = maxSec - (time(NULL) - startTime);
+					if (remainingSec <= 0) {
+						// no time left - gotta bail out now
+						error = YES;
+						printf("*** Error in DoWordBlockAttack() ***\n"
+								"    We simply ran out of time while trying to solve the\n"
+								"    problem. This could be because of too small a word\n"
+								"    set or too many possibilities in the words themselves.\n");
+						break;
 					}
 
 					/*
@@ -2114,8 +2140,12 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 			 *	of time we've been given by the caller has elapsed. If it
 			 *	has, then we need to quit regardless of what we've found.
 			 */
-			if ( (maxSec > 0) && ((time(NULL) - startTime) >= maxSec) ) {
-				timeLeft = NO;
+			if ((time(NULL) - startTime) >= maxSec) {
+				error = YES;
+				printf("*** Error in DoWordBlockAttack() ***\n"
+						"    We ran out of time while trying the next word in the\n"
+						"    attack. This is too bad, but could be because of too\n"
+						"    many words to check.\n");
 			}
 		}
 	}
@@ -2276,7 +2306,6 @@ void showUsage() {
 void logIt(char *msg) {
 	BOOL	error = NO;
 	char	*dateFmt = NULL;
-	char	userFmt[L_cuserid];
 	FILE	*fp = NULL;
 
 	/*
@@ -2294,19 +2323,6 @@ void logIt(char *msg) {
 		} else {
 			// drop the '\n' that's in the date/time string
 			dateFmt[24] = '\0';
-		}
-	}
-
-	/*
-	 *	Next, let's get the name of the user we're running under...
-	 */
-	if (!error) {
-		if (cuserid(userFmt) == NULL) {
-			error = YES;
-			printf("*** Error in logIt() ***\n"
-				   "    The process username could not be generated for the\n"
-				   "    log. This is a serious problem! The message was:\n"
-				   "    %s\n", msg);
 		}
 	}
 
@@ -2336,7 +2352,7 @@ void logIt(char *msg) {
 	 *	Now we can write this message out to the log file
 	 */
 	if (!error) {
-		fprintf(fp, "%s (%s) %s\n", dateFmt, userFmt, msg);
+		fprintf(fp, "%s (%s) %s\n", dateFmt, getlogin(), msg);
 	}
 
 	/*
