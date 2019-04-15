@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 /*
  *	System-level & Data type definitions
@@ -119,7 +120,7 @@ typedef cypherword *cypherword_ptr;
 /*
  *	One of the utilities we have at our disposal is a character
  *	frequency counter. This is useful for looking at the relative
- *	frequency of both plaintext characters as well as cyphertext 
+ *	frequency of both plaintext characters as well as cyphertext
  *	characters. The routine that calculates these numbers is called
  *	GenerateCharacterHistogramWithLegend(legend *map, BOOL showHisto)
  *	and takes a legend to use as the 'givens'. There's also a routine
@@ -271,9 +272,9 @@ BOOL DoPatternsMatch(char *cyphertext, char *plaintext) {
 				 *	in the other. If they both don't match,
 				 *	then stop checking.
 				 */
-				if (((cyphertext[j] == cypherchar) && 
+				if (((cyphertext[j] == cypherchar) &&
 				     (plaintext[j] != plainchar)) ||
-				    ((plaintext[j] == plainchar) && 
+				    ((plaintext[j] == plainchar) &&
 					 (cyphertext[j] != cypherchar))) {
 					matched = NO;
 					finished = YES;
@@ -289,7 +290,7 @@ BOOL DoPatternsMatch(char *cyphertext, char *plaintext) {
 
 /*
  *	This is an interesting little routine... It takes three things:
- *	a cyphertext, a legned and a plaintext - along with a 
+ *	a cyphertext, a legned and a plaintext - along with a
  *	'mustBeComplete' boolean flag, and sees if the legend can be
  *	used to generate the plaintext from the cyphertext. If the
  *	'mustBeComplete' is YES, then the legend must completly decode
@@ -376,8 +377,8 @@ BOOL CanCypherAndLegendMakePlain(char *cyphertext, legend *map, char *plaintext,
  *	'mustBeComplete' is TRUE, then there can be no 'missing' letters
  *	in the mapping. If it's FALSE, then missing letters are OK.
  *
- *	The return value will be a pointer to a copy of the cypherword's 
- *	possible plaintext, or NULL, if none is found. The caller is 
+ *	The return value will be a pointer to a copy of the cypherword's
+ *	possible plaintext, or NULL, if none is found. The caller is
  *	expected to free this copy when they are done with it.
  */
 char *GetPossibleOfCypherwordForLegend(cypherword *word, legend *map, BOOL mustBeComplete) {
@@ -668,7 +669,7 @@ BOOL CheckCypherwordForPossiblePlaintext(cypherword *word, char *str) {
 					   "    While trying to add the plaintext word '%s' to the\n"
 					   "    array of possible plaintext words for this cypherword,\n"
 					   "	the array needed to be expanded to hold %d words, but\n"
-					   "    couldn't. This is a real big problem!\n", str, 
+					   "    couldn't. This is a real big problem!\n", str,
 					   (word->possiblePlaintextSize == 0 ? STARTING_POSSIBLES_SIZE : (word->possiblePlaintextSize + INCREMENT_POSSIBLES_SIZE)) );
 
 				// if it's gone, we need to update the sizes
@@ -1120,7 +1121,7 @@ char *PlainToCypherString(legend *map, char *plaintext) {
  *
  *	Cyphertext functions
  *
- *	These functions are used at a high level to manipulate the 
+ *	These functions are used at a high level to manipulate the
  *	individual cypherwords in the system to try and find those
  *	legends that completly and accurately specify the solution
  *	to the problem.
@@ -1362,7 +1363,7 @@ BOOL CreateCypherwordsFromCyphertext(char *text) {
 			}
 		} else {
 			int		len = strlen(text);
-			
+
 			// make sure it contains nothing but legal characters
 			for (i = 0; i < len; i++) {
 				if (!(isspace(text[i]) || isalpha(text[i]) || ispunct(text[i]))) {
@@ -1610,7 +1611,7 @@ characterFrequencyData *GenerateCharacterCountsWithLegend(legend *map) {
 			// ...for each word, look at each possible plaintext
 			for (pos = 0; pos < words[i]->numberOfPossibles; pos++) {
 				/*
-				 *	Check to see if the legend works for this 
+				 *	Check to see if the legend works for this
 				 *	cypher/plain pair - but only do so if the
 				 *	legend exists. If not, then assume that all
 				 *	words are to be counted.
@@ -1816,7 +1817,7 @@ BOOL DoFrequencyAttack(legend *map, int maxSec) {
 	 *	by cypherchar so that doing a search over this space
 	 *	is both efficient and complete.
 	 *
-	 *	By calling BuildFreqAttackLegend() we're using 
+	 *	By calling BuildFreqAttackLegend() we're using
 	 *	recursion to scan the complete decoding space and
 	 *	call the necessary break-out routines to test a
 	 *	possible legend when the time is right.
@@ -1848,7 +1849,7 @@ BOOL DoFrequencyAttack(legend *map, int maxSec) {
  *
  *	There's also the possibility that there are no known
  *	possible values for a cyphertext character. This could
- *	easily happen because a certain letter is not used in 
+ *	easily happen because a certain letter is not used in
  *	a particular cyphertext. In this case, we have to act
  *	as though everything is fine and continue on processing.
  */
@@ -1886,7 +1887,7 @@ void BuildFreqAttackLegend(int cyphercharIndex, legend *map) {
 			}
 
 			/*
-			 *	If we aren't supposed to skip this one due to 
+			 *	If we aren't supposed to skip this one due to
 			 *	duplicates in the legend, then carry on and do it.
 			 */
 			if (!skip) {
@@ -1972,7 +1973,7 @@ void TestFreqAttackLegend(legend *map) {
 					// see if there's enough room in the list
 					if (plainTextCnt == plainTextMaxCnt) {
 						/*
-						 *	OK... we need to expand the array the right 
+						 *	OK... we need to expand the array the right
 						 *	amount.
 						 */
 						if (plainTextMaxCnt == 0) {
@@ -1986,7 +1987,7 @@ void TestFreqAttackLegend(legend *map) {
 								   "    While trying to add the plaintext answer '%s' to the\n"
 								   "    array of valid decodings for this cyphertext,\n"
 								   "	the array needed to be expanded to hold %d decodings, but\n"
-								   "    couldn't. This is a real big problem!\n", decoded, 
+								   "    couldn't. This is a real big problem!\n", decoded,
 								   (plainTextMaxCnt == 0 ? STARTING_POSSIBLES_SIZE : (plainTextMaxCnt + INCREMENT_POSSIBLES_SIZE)) );
 
 							// if it's gone, we need to update the sizes
@@ -1994,7 +1995,7 @@ void TestFreqAttackLegend(legend *map) {
 							plainTextMaxCnt = 0;
 						} else {
 							/*
-							 *	OK! it worked, so let's reflect the size 
+							 *	OK! it worked, so let's reflect the size
 							 *	change
 							 */
 							plainTextMaxCnt += INCREMENT_POSSIBLES_SIZE;
@@ -2022,7 +2023,7 @@ void TestFreqAttackLegend(legend *map) {
  ************************************************************************/
 /*
  *	This is the general routine for carrying out the word block
- *	attack on the cyphertext. The idea is that we start with a 
+ *	attack on the cyphertext. The idea is that we start with a
  *	user-supplied legend, and then for each plaintext word in the
  *	first cypherword that matches the legend, we add those keys
  *	not in the legend, but supplied by the plaintext to the legend
@@ -2085,7 +2086,7 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 								// see if there's enough room in the list
 								if (plainTextCnt == plainTextMaxCnt) {
 									/*
-									 *	OK... we need to expand the array the right 
+									 *	OK... we need to expand the array the right
 									 *	amount.
 									 */
 									if (plainTextMaxCnt == 0) {
@@ -2099,7 +2100,7 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 											   "    While trying to add the plaintext answer '%s' to the\n"
 											   "    array of valid decodings for this cyphertext,\n"
 											   "	the array needed to be expanded to hold %d decodings, but\n"
-											   "    couldn't. This is a real big problem!\n", decoded, 
+											   "    couldn't. This is a real big problem!\n", decoded,
 											   (plainTextMaxCnt == 0 ? STARTING_POSSIBLES_SIZE : (plainTextMaxCnt + INCREMENT_POSSIBLES_SIZE)) );
 
 										// if it's gone, we need to update the sizes
@@ -2107,7 +2108,7 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 										plainTextMaxCnt = 0;
 									} else {
 										/*
-										 *	OK! it worked, so let's reflect the size 
+										 *	OK! it worked, so let's reflect the size
 										 *	change
 										 */
 										plainTextMaxCnt += INCREMENT_POSSIBLES_SIZE;
@@ -2125,12 +2126,12 @@ BOOL DoWordBlockAttack(int cypherwordIndex, legend *map, int maxSec) {
 					/*
 					 *	OK, we had a match but we have more cypherwords
 					 *	to check. So, copy the legend, add in the assumed
-					 *	values from the plaintext, and move to the next 
+					 *	values from the plaintext, and move to the next
 					 *	word.
 					 *
 					 *	BUT FIRST, we need to check the run-time. If we're
 					 *	past the alloted time given to us then we need to
-					 *	bail out - regardless of the state of the 
+					 *	bail out - regardless of the state of the
 					 *	decryption.
 					 */
 					int			remainingSec = -1;
@@ -2239,8 +2240,8 @@ BOOL IncorporateCypherToPlainMapInLegend(char *cyphertext, char *plaintext, lege
 		if (strlen(cyphertext) != strlen(plaintext)) {
 			error = YES;
 			printf("*** Error in IncorporateCypherToPlainMapInLegend() ***\n"
-				   "    The length of the cyphertext was %d and the length of\n"
-				   "    the plaintext was %d. This means we can't match up the\n"
+				   "    The length of the cyphertext was %lu and the length of\n"
+				   "    the plaintext was %lu. This means we can't match up the\n"
 				   "    characters because they are of different lengths.\n",
 				   strlen(cyphertext), strlen(plaintext));
 		}
@@ -2444,7 +2445,7 @@ int main(int argc, char *argv[]) {
 		randSeed = time(NULL) % 23487637;
 		rand_r(&randSeed);
 	}
-	
+
 	/*
 	 *	Next, read in the command line options and process each
 	 */
@@ -2597,8 +2598,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	/*
-	 *	Next, we need to read in the file of words and 
-	 *	process each word to see if it's a possible match to 
+	 *	Next, we need to read in the file of words and
+	 *	process each word to see if it's a possible match to
 	 *	each cypherword.
 	 */
 	if (!error && keepGoing) {

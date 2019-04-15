@@ -1,0 +1,8 @@
+*.bak
+*.pbxuser
+*.mode1v3
+*.xcuserstate
+build
+profile
+quip.dSYM/
+quip
