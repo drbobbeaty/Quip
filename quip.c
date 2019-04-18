@@ -23,6 +23,7 @@
 #include <strings.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -2425,6 +2426,7 @@ int main(int argc, char *argv[]) {
 	char	*wordsFilename = NULL;
 	// this is for logging purposes
 	char	logMsg[2408];
+	uint64_t	runtime_us = 0;
 
 	/*
 	 *	First, set up the defaults for this program
@@ -2635,9 +2637,14 @@ int main(int argc, char *argv[]) {
 	 *	at once and therefore make it a little more speedy.
 	 */
 	if (!error && keepGoing && tryingWordBlockAttack) {
+		struct timespec	start, end;
+		clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 		if (!DoWordBlockAttack(0, userLegend, timeLimit)) {
 			keepGoing = NO;
 		}
+		clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+		runtime_us = (end.tv_sec - start.tv_sec) * 1000000
+		             + (end.tv_nsec - start.tv_nsec) / 1000;
 		// ...well... we certainly tried
 		solutionAttempted = YES;
 	}
@@ -2664,7 +2671,7 @@ int main(int argc, char *argv[]) {
 				if (htmlOutput) {
 					printf("%s<BR>\n", plainText[i]);
 				} else {
-					printf("Solution: %s\n", plainText[i]);
+					printf("[%llu us] Solution: %s\n", runtime_us, plainText[i]);
 				}
 			}
 		}
