@@ -47,6 +47,10 @@
 #ifndef BOOL
 typedef int BOOL;
 #endif
+// some systems don't have the unsigned long like macOS
+#ifndef uint64_t
+typedef u_int64_t uint64_t;
+#endif
 
 /*
  *	Public Constants
@@ -2426,7 +2430,7 @@ int main(int argc, char *argv[]) {
 	char	*wordsFilename = NULL;
 	// this is for logging purposes
 	char	logMsg[2408];
-	uint64_t	runtime_us = 0;
+	int64_t	runtime_us = 0;
 
 	/*
 	 *	First, set up the defaults for this program
@@ -2671,7 +2675,7 @@ int main(int argc, char *argv[]) {
 				if (htmlOutput) {
 					printf("%s<BR>\n", plainText[i]);
 				} else {
-					printf("[%llu us] Solution: %s\n", runtime_us, plainText[i]);
+					printf("[%lu us] Solution: %s\n", runtime_us, plainText[i]);
 				}
 			}
 		}

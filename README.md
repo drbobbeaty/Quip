@@ -16,6 +16,8 @@ was lost on a 5.25" floppy long ago. It is primarily a benchmark for the
 language. This was written in 2002 after I'd decided to move off my IBM PC and
 _Turbo Pascal_, and onto the University's computers and C.
 
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/drbobbeaty/Quip) 
+
 ## The Origin Story
 
 It all starts at Purdue University in the Fall of 1985, in the EE007 office of a

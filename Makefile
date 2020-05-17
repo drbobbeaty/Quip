@@ -10,7 +10,7 @@ quip: quip.c
 	$(CC) $(CCOPTS) -o quip quip.c
 
 clean:
-	$(RM) quip
+	$(RM) -f quip
 
 test:
 	./quip 'Fict O ncc bivteclnbklzn O lcpji ukl pt vzglcddp' -kb=t -fwords
