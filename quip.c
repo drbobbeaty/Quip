@@ -47,10 +47,6 @@
 #ifndef BOOL
 typedef int BOOL;
 #endif
-// some systems don't have the unsigned long like macOS
-#ifndef uint64_t
-typedef u_int64_t uint64_t;
-#endif
 
 /*
  *	Public Constants
