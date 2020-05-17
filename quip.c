@@ -2430,7 +2430,7 @@ int main(int argc, char *argv[]) {
 	char	*wordsFilename = NULL;
 	// this is for logging purposes
 	char	logMsg[2408];
-	int64_t	runtime_us = 0;
+	int		runtime_us = 0;
 
 	/*
 	 *	First, set up the defaults for this program
@@ -2675,7 +2675,7 @@ int main(int argc, char *argv[]) {
 				if (htmlOutput) {
 					printf("%s<BR>\n", plainText[i]);
 				} else {
-					printf("[%lu us] Solution: %s\n", runtime_us, plainText[i]);
+					printf("[%d us] Solution: %s\n", runtime_us, plainText[i]);
 				}
 			}
 		}
